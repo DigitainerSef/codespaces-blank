@@ -1,0 +1,56 @@
+#include <SPI.h>
+#include <LoRa.h> 
+#include <Servo.h>
+
+Servo servoL;
+Servo servoR;
+
+int movementL = 1, movementR = 1, lastMovementL = 1, lastMovementR = 1; // movement van 1 is stilstaan,2 is vooruit en 0 is achteruit
+
+int getServoSpeedFromJoystick(int input){ // input = 0, 1 of 2
+  return input * 90;
+}
+ 
+void setup() {
+  Serial.begin(9600);
+
+ 
+  while (!Serial);
+  Serial.println("LoRa Receiver");
+  if (!LoRa.begin(433E6)) {
+    Serial.println("Starting LoRa failed!");
+    while (1);
+  }{
+  if (movementL != lastMovementL || movementR != lastMovementR){
+    servoL.write(getServoSpeedFromJoystick(movementL));
+    servoR.write(getServoSpeedFromJoystick(movementR));
+
+    lastMovementL = movementL;
+    lastMovementR = movementR;
+  }
+}
+
+void onReceive(int packetSize){
+  movementL = (int)LoRa.read();
+  movementR = (int)LoRa.read();
+
+  Serial.print(movementL); Serial.print(" ");
+
+  Serial.print(movementR);
+
+  delay(100);
+
+  Serial.print("\n Rssi:\n");
+    Serial.println(LoRa.packetRssi());  
+    Serial.println(LoRa.packetSnr());
+    Serial.println(LoRa.packetFrequencyError());
+    Serial.print("\n");
+}
+
+  servoL.attach(5);
+  servoR.attach(6);
+  LoRa.onReceive(onReceive);
+  LoRa.receive();
+}
+
+void loop()
